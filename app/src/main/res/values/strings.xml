@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">SightBlocker</string>
+
+    <string name="status_label">Status</string>
+    <string name="block_label">Block</string>
+    <string name="block_button">Block YouTube now</string>
+    <string name="unblock_label">Unblock</string>
+    <string name="phrase_hint">Type the phrase above</string>
+    <string name="cancel_button">Cancel unblock</string>
+    <string name="dev_release_button">DEV: release device owner</string>
+
+    <string name="state_blocked">BLOCKED</string>
+    <string name="state_unblocked">UNBLOCKED</string>
+    <string name="detail_blocked">YouTube is blocked in Chrome and the YouTube app.</string>
+    <string name="detail_unblocked">Nothing is blocked.</string>
+    <string name="detail_waiting">Unblock available in %1$s</string>
+    <string name="detail_ready">Wait is over. Type the phrase again within %1$s or the request expires.</string>
+    <string name="detail_not_owner">Not Device Owner. Provision with adb, see README.</string>
+
+    <string name="help_unblocked">Nothing to unblock.</string>
+    <string name="help_blocked">Step 1 of 2. Type the phrase exactly to start a 20 minute wait.</string>
+    <string name="help_waiting">Step 1 done. Come back when the wait is over.</string>
+    <string name="help_ready">Step 2 of 2. Type the phrase again before the time runs out.</string>
+
+    <string name="btn_request_unblock">Request unblock</string>
+    <string name="btn_waiting">Waiting…</string>
+    <string name="btn_confirm_unblock">Confirm unblock</string>
+    <string name="btn_unblock_idle">Unblock</string>
+</resources>
