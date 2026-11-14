@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug builds only. testOnly lets you remove Device Owner from a computer with:
+    adb shell dpm remove-active-admin com.example.sightblocker/.admin.SightBlockerAdminReceiver
+  Release builds do NOT have this flag, so they can only be undone by a factory reset.
+  Always test on a real phone with a debug build first.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:testOnly="true" />
+</manifest>

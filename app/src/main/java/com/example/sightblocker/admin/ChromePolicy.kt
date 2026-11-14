@@ -14,6 +14,11 @@ object ChromePolicy {
         "youtube.com",
         "youtu.be",
         "youtube-nocookie.com",
+        // Adult sites. Not mentioned anywhere in the UI on purpose.
+        "xnxx.com",
+        "xnxx.tv",
+        "xvideos.com",
+        "pornhub.com",
     )
 
     fun blocking(): Bundle = Bundle().apply {

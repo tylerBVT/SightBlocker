@@ -65,12 +65,19 @@ On a real phone, remove accounts instead and try the plain command first.
 
 ## Getting out (development)
 
-Debug builds from Android Studio are `testOnly`, so you can always run:
-```
-adb shell dpm remove-active-admin com.example.sightblocker/.admin.SightBlockerAdminReceiver
-```
-The "DEV: release device owner" button also works. A release-signed, non-testOnly build cannot be
-removed this way. Only do that on the real phone once everything else is finished.
+All **debug** builds are marked `testOnly` (see `app/src/debug/AndroidManifest.xml`). Two ways out, in order of preference:
+
+1. **The in-app "Device Owner" card** (shown only while unblocked; Release, then Yes). Undoes everything cleanly: Chrome policy,
+   YouTube suspension, clock lock, tamper protection, then gives up ownership. Works even while BLOCKED.
+2. **From the computer**, if the app will not open: `scripts\reset-owner.ps1`
+   (`adb shell dpm remove-active-admin ...`). Verified on the emulator. Limit: if YouTube was suspended it stays
+   suspended afterwards. Recover by provisioning again and using button 1.
+
+A **release** build is not testOnly and cannot be removed with adb. The only way out is the app itself or a
+factory reset. Do not install a release build on your phone until the debug build has worked there.
+
+Note: ownership must be provisioned *with the testOnly build installed*. Installing a testOnly update over an
+existing non-testOnly owner does not make it removable.
 
 ## Testing
 

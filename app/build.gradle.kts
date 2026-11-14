@@ -1,5 +1,13 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
+}
+
+// Signing key lives OUTSIDE the repo (never committed): %USERPROFILE%\.sightblocker\keystore.properties
+val keystoreProps = Properties().apply {
+    val f = file("${System.getProperty("user.home")}/.sightblocker/keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
 }
 
 android {
@@ -18,12 +26,23 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (keystoreProps.isNotEmpty()) {
+            create("release") {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            optimization {
-                enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
-            }
+            if (keystoreProps.isNotEmpty()) signingConfig = signingConfigs.getByName("release")
+            // R8 shrinking crashed the release build at launch (IllegalAccessError) and saves
+            // almost nothing in an app this small, so it stays off.
+            isMinifyEnabled = false
         }
     }
     compileOptions {

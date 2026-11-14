@@ -1,6 +1,7 @@
 package com.example.sightblocker
 
 import android.content.pm.ApplicationInfo
+import androidx.appcompat.app.AlertDialog
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -40,6 +41,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var phraseInput: EditText
     private lateinit var btnUnblock: Button
     private lateinit var btnCancel: Button
+    private lateinit var waitLabel: String
+    private lateinit var ownerCard: View
+    private lateinit var btnReleaseOwner: Button
 
     private val handler = Handler(Looper.getMainLooper())
     private val tick = object : Runnable {
@@ -59,8 +63,19 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        // Debug builds use short timers so the whole flow can be tested in a minute.
+        // Release builds always use the real ones; there is no switch to shorten them.
+        val isDebuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+        waitLabel = if (isDebuggable) "30 second" else "20 minute"
         policy = PolicyController(this)
-        engine = BlockingEngine(PrefsBlockStore(this), DeviceOwnerEnforcer(policy))
+        engine = if (isDebuggable) {
+            BlockingEngine(
+                PrefsBlockStore(this), DeviceOwnerEnforcer(policy),
+                waitMs = BlockingEngine.DEBUG_WAIT_MS, readyWindowMs = BlockingEngine.DEBUG_READY_WINDOW_MS,
+            )
+        } else {
+            BlockingEngine(PrefsBlockStore(this), DeviceOwnerEnforcer(policy))
+        }
 
         statusTitle = findViewById(R.id.statusTitle)
         statusDetail = findViewById(R.id.statusDetail)
@@ -85,15 +100,9 @@ class MainActivity : AppCompatActivity() {
             handle(outcome)
         }
 
-        // Developer tool, shown only in debug builds.
-        val isDebuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
-        findViewById<Button>(R.id.btnDevRelease).apply {
-            visibility = if (isDebuggable) View.VISIBLE else View.GONE
-            setOnClickListener {
-                if (policy.isDeviceOwner()) policy.releaseDeviceOwner()
-                render()
-            }
-        }
+        ownerCard = findViewById(R.id.ownerCard)
+        btnReleaseOwner = findViewById(R.id.btnReleaseOwner)
+        btnReleaseOwner.setOnClickListener { confirmReleaseOwner() }
     }
 
     override fun onResume() {
@@ -143,6 +152,22 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    /** Only while unblocked: ask once, then give up Device Owner. */
+    private fun confirmReleaseOwner() {
+        if (engine.state().status != Status.UNBLOCKED || !policy.isDeviceOwner()) return
+        AlertDialog.Builder(this)
+            .setTitle(R.string.release_dialog_title)
+            .setMessage(R.string.release_dialog_message)
+            .setPositiveButton(R.string.release_dialog_yes) { _, _ ->
+                if (engine.state().status == Status.UNBLOCKED && policy.isDeviceOwner()) {
+                    policy.releaseDeviceOwner()
+                }
+                render()
+            }
+            .setNegativeButton(R.string.release_dialog_no, null)
+            .show()
+    }
+
     private fun handle(outcome: Outcome) {
         if (outcome is Outcome.Rejected) {
             Toast.makeText(this, outcome.reason, Toast.LENGTH_SHORT).show()
@@ -171,15 +196,13 @@ class MainActivity : AppCompatActivity() {
         // 2. Block: only usable while unblocked
         btnBlock.isEnabled = owner && status == Status.UNBLOCKED
 
-        // 3. Unblock: only usable while blocked
-        unblockHelp.setText(
-            when (status) {
-                Status.UNBLOCKED -> R.string.help_unblocked
-                Status.BLOCKED -> R.string.help_blocked
-                Status.WAITING -> R.string.help_waiting
-                Status.READY -> R.string.help_ready
-            }
-        )
+        // 3. Unblock
+        unblockHelp.text = when (status) {
+            Status.UNBLOCKED -> getString(R.string.help_unblocked)
+            Status.BLOCKED -> getString(R.string.help_blocked, waitLabel)
+            Status.WAITING -> getString(R.string.help_waiting)
+            Status.READY -> getString(R.string.help_ready)
+        }
         val canType = status == Status.BLOCKED || status == Status.READY
         phraseInput.isEnabled = canType
         btnUnblock.setText(
@@ -191,8 +214,10 @@ class MainActivity : AppCompatActivity() {
             }
         )
         btnUnblock.isEnabled = canType && UnlockPhrase.matches(phraseInput.text.toString())
-        btnCancel.visibility =
-            if (status == Status.WAITING || status == Status.READY) View.VISIBLE else View.GONE
+        btnCancel.visibility = if (status == Status.WAITING || status == Status.READY) View.VISIBLE else View.GONE
+
+        // 4. Device Owner: only while unblocked, and only if we are owner
+        ownerCard.visibility = if (!locked && owner) View.VISIBLE else View.GONE
     }
 
     private fun formatRemaining(ms: Long): String {

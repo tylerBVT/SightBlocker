@@ -53,33 +53,65 @@ Note `adb shell am force-stop` will NOT stop the app while blocked (step 14); us
 
 Watch the log while you test: `adb logcat -s SightBlocker`
 
+## C2. Release Device Owner (4th card)
+
+A fourth card, **Device Owner**, appears under Unblock only while UNBLOCKED and only while the app is Device Owner.
+It has no wait and no phrase; it asks once in a pop-up.
+
+| # | Step | Expected |
+|---|---|---|
+| R1 | While BLOCKED, scroll down | No Device Owner card |
+| R2 | Unblock fully | The Device Owner card appears |
+| R3 | Tap **Release device owner**, then **No** | Pop-up closes. Still owner (`adb shell dpm list-owners` shows it) |
+| R4 | Tap **Release device owner**, then **Yes, release** | Status says "Not Device Owner", the card disappears. `dpm list-owners` prints nothing |
+| R5 | Tap **Block** while unblocked, then look for the card | The card disappears while BLOCKED |
+| R6 | After R4, uninstall SightBlocker like any app | Works |
+
 ## D. Reset
 
+Best: unblock, then use the **Device Owner** card in the app.
+
+If the app will not open:
 ```
 powershell -ExecutionPolicy Bypass -File scripts\reset-owner.ps1
 ```
-Removes Device Owner and the app. You can also wipe the emulator in Device Manager (down arrow > **Wipe Data**).
+Removes Device Owner and the app. If YouTube was blocked it stays suspended afterwards (adb cannot undo that).
+Recover by running `scripts\provision-emulator.ps1` again, opening the app and using the **Device Owner** card.
+You can also wipe the emulator in Device Manager (down arrow > **Wipe Data**).
 
 ## E. Trying it on the Galaxy A16 (this is the Knox / Android 16 test)
 
-Do this only with the **debug build** from Android Studio. It is `testOnly`, so you can always remove it
-with `reset-owner.ps1`. Do not use a release build until the debug build has worked on the phone.
+### Rules that keep you safe
+1. **Debug build only.** Never install a release build on the phone for this test.
+2. **Provision the phone while the debug (testOnly) build is installed.** Check first, see step 5.
+3. **Know your escape before you start:** (a) the app's Device Owner card (only while unblocked), (b) `scripts\reset-owner.ps1`, (c) as a last resort a factory reset (wipes everything).
+4. **Know your Google account password.** After a factory reset, Android may demand the last Google account on the phone (Factory Reset Protection).
+5. **Back up first**: photos, WhatsApp/Signal chats, 2FA/authenticator apps (removing accounts can lose their data), Samsung Cloud / Smart Switch.
+6. Keep the USB cable and USB debugging on for the whole test. Do not turn debugging off until you have finished and released ownership.
+7. Do not press Block during the first minutes. First prove you can get out (steps 9 and 10).
 
-1. **Back up first.** Provisioning needs accounts removed, and a failed attempt could leave you resetting.
+### Steps
+1. **Back up** (rule 5).
 2. Enable Developer options (Settings > About phone > Software information > tap *Build number* 7 times) and turn on **USB debugging**.
 3. Remove **all accounts**: Settings > Accounts and backup > Manage accounts (Google, Samsung, any others). Also remove any Secure Folder or work profile, since extra users can block provisioning.
 4. Connect the phone by USB, accept the debugging prompt, and check `adb devices` lists it.
-5. In Android Studio, run the app on the phone, or `gradlew installDebug`.
+5. Install the debug build: `gradlew installDebug`. Confirm it is testOnly:
+   ```
+   adb shell dumpsys package com.example.sightblocker | findstr pkgFlags
+   ```
+   The line must contain `TEST_ONLY`. If it does not, stop.
 6. Provision:
    ```
    adb shell dpm set-device-owner com.example.sightblocker/.admin.SightBlockerAdminReceiver
    ```
    - Success: `Device owner set to package ...`.
    - "already some accounts": an account is still present. Check Samsung account, Google, and Secure Folder.
-   - Anything mentioning Knox or a security exception: copy the whole message to me.
-7. Run checklist C steps 1 to 7 on the phone.
-8. Re-add your Google account (Settings > Accounts) and confirm that works and the block still holds.
-9. When finished testing, run `scripts\reset-owner.ps1` if you want it gone.
+   - Anything mentioning Knox or a security exception: copy the whole message to me. Nothing was changed.
+7. Open SightBlocker on the phone. It should say it is not blocked, with the Block button enabled.
+8. **Re-add your Google account** (Settings > Accounts). Confirm that works.
+9. **Prove the escape works BEFORE blocking:** use the **Device Owner** card (Release, Yes), then check `adb shell dpm list-owners` prints nothing. Provision again (step 6).
+10. Now run checklist C. Press Block, test Chrome and the YouTube app, test the unlock flow.
+11. When finished, use the **Device Owner** card (cleanest), or `scripts\reset-owner.ps1` if the app will not open.
 
 What to watch for on Samsung, because we can't know in advance:
 - Whether `set-device-owner` is accepted at all.
@@ -87,3 +119,4 @@ What to watch for on Samsung, because we can't know in advance:
 - Whether Samsung Internet is still open as a way round (expected, not yet handled).
 - Whether the YouTube app can be suspended (it is preinstalled on Samsung).
 - Whether re-adding the accounts afterwards is allowed.
+- Whether the date/time lock works with Samsung's Settings.

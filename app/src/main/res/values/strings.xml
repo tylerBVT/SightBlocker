@@ -7,7 +7,6 @@
     <string name="unblock_label">Unblock</string>
     <string name="phrase_hint">Type the phrase above</string>
     <string name="cancel_button">Cancel unblock</string>
-    <string name="dev_release_button">DEV: release device owner</string>
 
     <string name="state_blocked">BLOCKED</string>
     <string name="state_unblocked">UNBLOCKED</string>
@@ -18,7 +17,7 @@
     <string name="detail_not_owner">Not Device Owner. Provision with adb, see README.</string>
 
     <string name="help_unblocked">Nothing to unblock.</string>
-    <string name="help_blocked">Step 1 of 2. Type the phrase exactly to start a 20 minute wait.</string>
+    <string name="help_blocked">Step 1 of 2. Type the phrase exactly to start a %1$s wait.</string>
     <string name="help_waiting">Step 1 done. Come back when the wait is over.</string>
     <string name="help_ready">Step 2 of 2. Type the phrase again before the time runs out.</string>
 
@@ -26,4 +25,12 @@
     <string name="btn_waiting">Waiting…</string>
     <string name="btn_confirm_unblock">Confirm unblock</string>
     <string name="btn_unblock_idle">Unblock</string>
+
+    <string name="owner_label">Device Owner</string>
+    <string name="owner_help">Give up Device Owner so SightBlocker becomes a normal app that can be uninstalled.</string>
+    <string name="btn_release_owner">Release device owner</string>
+    <string name="release_dialog_title">Release Device Owner?</string>
+    <string name="release_dialog_message">SightBlocker will stop being Device Owner. To use the app again you will have to set Device Owner back with your laptop (adb). Continue?</string>
+    <string name="release_dialog_yes">Yes, release</string>
+    <string name="release_dialog_no">No</string>
 </resources>

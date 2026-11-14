@@ -79,17 +79,20 @@ class BlockingEngine(
 
     /** Re-applies the block if we are supposed to be blocked. Call when the screen opens. */
     fun reconcile() {
-        if (store.locked && enforcer.isAvailable()) {
-            try {
-                enforcer.enforce()
-            } catch (_: Exception) {
-                // Nothing useful to do here; the screen shows the real state.
-            }
+        if (!enforcer.isAvailable() || !store.locked) return
+        try {
+            enforcer.enforce()
+        } catch (_: Exception) {
+            // Nothing useful to do here; the screen shows the real state.
         }
     }
 
     companion object {
         val DEFAULT_WAIT_MS: Long = TimeUnit.MINUTES.toMillis(20)
         val DEFAULT_READY_WINDOW_MS: Long = TimeUnit.MINUTES.toMillis(5)
+
+        /** Debug builds only (see MainActivity), so the whole flow can be tested in about a minute. */
+        val DEBUG_WAIT_MS: Long = TimeUnit.SECONDS.toMillis(30)
+        val DEBUG_READY_WINDOW_MS: Long = TimeUnit.SECONDS.toMillis(60)
     }
 }
